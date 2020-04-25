@@ -3,10 +3,11 @@ import time, pickle, re
 import datetime, os
 import cv2, pickle,random
 import numpy as np
-import tensorflow as tf
 from scipy.spatial import distance
 from werkzeug import secure_filename
 from pymediainfo import MediaInfo
+
+os.environ['KERAS_BACKEND'] = 'theano'
 
 MAIN_DIR='C:\\Users\\tusha\Desktop\\'           #change the main dir as per the system
 UPLOAD_FOLDER = MAIN_DIR + 'ISL\\upload'
@@ -21,12 +22,9 @@ f.close()
 
 # load model
 global model
-from tensorflow.keras.models import load_model
 model = load_model('model.h5')
 
 # app.config['MAX_CONTENT_LENGTH'] =  * 1024 * 1024
-global graph
-graph = tf.get_default_graph()
 
 @app.route("/")
 def home():
@@ -260,17 +258,16 @@ def video_to_sigml_convertor(filename=None):
         while True:
             try:
                 _, img = cap.read()
-
                 img = cv2.resize(img, (60, 60), interpolation=cv2.INTER_AREA)
                 img = img.reshape(1, 60, 60, 3)  # preparing input image
-                with graph.as_default():
-                    gen_output=np.argmax(model.predict(img))
-                #gen_output = random.randint(0,100)  # for testing
-
-                fin_sigml=get_sigml(gen_output)  # passing output that is generated
-                cumulated_list.append(fin_sigml)
             except:
                 break
+            
+            gen_output=np.argmax(model.predict(img))
+            #gen_output = random.randint(0,100)  # for testing
+
+            fin_sigml=get_sigml(gen_output)  # passing output that is generated
+            cumulated_list.append(fin_sigml)
 
         final_tags = final_process(cumulated_list)
         real_tags = joiner(final_tags)
