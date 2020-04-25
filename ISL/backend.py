@@ -8,8 +8,6 @@ from scipy.spatial import distance
 from werkzeug import secure_filename
 from pymediainfo import MediaInfo
 
-os.environ['KERAS_BACKEND'] = 'theano'
-
 MAIN_DIR='C:\\Users\\tusha\Desktop\\'           #change the main dir as per the system
 UPLOAD_FOLDER = MAIN_DIR + 'ISL\\upload'
 
@@ -22,12 +20,13 @@ opt_dic = pickle.load(f)
 f.close()
 
 # load model
+global model
 from tensorflow.keras.models import load_model
 model = load_model('model.h5')
 
-graph = tf.get_default_graph()          #loading default graph
-
 # app.config['MAX_CONTENT_LENGTH'] =  * 1024 * 1024
+global graph
+graph = tf.get_default_graph()
 
 @app.route("/")
 def home():
@@ -251,39 +250,39 @@ def join_tags(ordered_tags):
 
 def video_to_sigml_convertor(filename=None):
 
-    global ham_text,given_file_name,model,graph
-    with graph.as_default():
-        print(filename)
-        cumulated_list=[]
-        input_video = UPLOAD_FOLDER + '//' + filename
-        if filename is not None:
-            cap = cv2.VideoCapture(input_video)
+    global ham_text,given_file_name
 
-            while True:
-                try:
-                    _, img = cap.read()
+    print(filename)
+    cumulated_list=[]
+    input_video = UPLOAD_FOLDER + '//' + filename
+    if filename is not None:
+        cap = cv2.VideoCapture(input_video)
+        while True:
+            try:
+                _, img = cap.read()
 
-                    img = cv2.resize(img, (60, 60), interpolation=cv2.INTER_AREA)
-                    img = img.reshape(1, 60, 60, 3)  # preparing input image
-                    #gen_output=np.argmax(model.predict(img))
-                    gen_output = random.randint(0,100)  # for testing
+                img = cv2.resize(img, (60, 60), interpolation=cv2.INTER_AREA)
+                img = img.reshape(1, 60, 60, 3)  # preparing input image
+                with graph.as_default():
+                    gen_output=np.argmax(model.predict(img))
+                #gen_output = random.randint(0,100)  # for testing
 
-                    fin_sigml=get_sigml(gen_output)  # passing output that is generated
-                    cumulated_list.append(fin_sigml)
-                except:
-                    break
+                fin_sigml=get_sigml(gen_output)  # passing output that is generated
+                cumulated_list.append(fin_sigml)
+            except:
+                break
 
-            final_tags = final_process(cumulated_list)
-            real_tags = joiner(final_tags)
-            ordered_tags = make_order(real_tags)
-            final_sigml_text = join_tags(ordered_tags)
-            final_text= start + final_sigml_text + end      #text file will be generated; and that will be our final output sigml file
-            sigmlfile_name = filename.split('.')[0]
-            given_file_name=sigmlfile_name+'.txt'
-            opt_name_file=UPLOAD_FOLDER+'//'+'sigml_'+given_file_name
-            f=open(opt_name_file,'w')
-            f.write(final_text)
-            f.close()
+        final_tags = final_process(cumulated_list)
+        real_tags = joiner(final_tags)
+        ordered_tags = make_order(real_tags)
+        final_sigml_text = join_tags(ordered_tags)
+        final_text= start + final_sigml_text + end      #text file will be generated; and that will be our final output sigml file
+        sigmlfile_name = filename.split('.')[0]
+        given_file_name=sigmlfile_name+'.txt'
+        opt_name_file=UPLOAD_FOLDER+'//'+'sigml_'+given_file_name
+        f=open(opt_name_file,'w')
+        f.write(final_text)
+        f.close()
     # after this function a cumulated ham_text will be generated, this can be concatenated with start and end text as declared above and saved
 
 if __name__ == "__main__":
