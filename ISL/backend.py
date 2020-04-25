@@ -8,6 +8,8 @@ from scipy.spatial import distance
 from werkzeug import secure_filename
 from pymediainfo import MediaInfo
 
+os.environ['KERAS_BACKEND'] = 'theano'
+
 MAIN_DIR='C:\\Users\\tusha\Desktop\\'           #change the main dir as per the system
 UPLOAD_FOLDER = MAIN_DIR + 'ISL\\upload'
 
